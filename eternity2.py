@@ -26,6 +26,7 @@ import pandas as pd
 # 21 - LIGHT BLUE AXE
 # 22 - DARK BLUE HEXAGON
 
+PUZZLE_SIZE = 6
 
 df = pd.read_csv('pieces.csv', sep=',')
 
@@ -49,10 +50,10 @@ for piece in raw_data:
     piece_encodings[piece] = gen_orientations(new_list)
 
 S = range(len([p for p in piece_encodings if -1 in piece_encodings.get(p)]))
-R = range(int(math.sqrt(len(piece_encodings))))
-C = range(int(math.sqrt(len(piece_encodings))))
+R = range(PUZZLE_SIZE)
+C = range(PUZZLE_SIZE)
 
-P = range(len(piece_encodings))
+P = range(PUZZLE_SIZE * PUZZLE_SIZE)
 O = range(len(piece_encodings.get(1)))
 
 m = Model()
@@ -84,16 +85,16 @@ for j in C:
 # Constrain Side Pieces (Row)
 for i in R:
     if i == 0:
-        m.addConstr(quicksum(X[i,j,p,o] * piece_encodings[p][o][0] for p in P for o in O) == -1)
+        m.addConstr(quicksum(X[i,j,p,o] * piece_encodings[p][o][0] for p in P for o in O) <= 0)
     if i == R[:-1]:
-        m.addConstr(quicksum(X[i,j,p,o] * piece_encodings[p][o][2] for p in P for o in O) == -1)
+        m.addConstr(quicksum(X[i,j,p,o] * piece_encodings[p][o][2] for p in P for o in O) <= 0)
 
 # Constrain Side Pieces (Col)
 for j in C:
     if j == 0:
-        m.addConstr(quicksum(X[i,j,p,o] * piece_encodings[p][o][3] for p in P for o in O) == -1)
+        m.addConstr(quicksum(X[i,j,p,o] * piece_encodings[p][o][3] for p in P for o in O) <= 0)
     if j == C[:-1]:
-        m.addConstr(quicksum(X[i,j,p,o] * piece_encodings[p][o][1] for p in P for o in O) == -1)
+        m.addConstr(quicksum(X[i,j,p,o] * piece_encodings[p][o][1] for p in P for o in O) <= 0)
 
 m.optimize()
 
