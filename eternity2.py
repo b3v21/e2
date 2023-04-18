@@ -66,9 +66,12 @@ for i in R:
     for j in C:
         m.addConstr(quicksum(X[i,j,p,o] for p in P for o in O) == 1)
 
-# Piece can only be used once
+# If piece is used, it has to be used once and only once
 for p in P:
-    m.addConstr(quicksum(X[i,j,p,o] for i in R for j in C for o in O) == 1)
+    m.addConstr(quicksum(X[i,j,p,o] for i in R for j in C for o in O) <= 1)
+
+# Amount of pieces used has to match puzzle size
+m.addConstr(quicksum(X[i,j,p,o] for p in P for i in R for j in C for o in O) == PUZZLE_SIZE * PUZZLE_SIZE)
 
 # Neighbour Constraint Column
 for i in R:
