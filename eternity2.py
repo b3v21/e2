@@ -98,14 +98,13 @@ def eternity_two_solver(pieces: Dict[int, List[str]]):
 if __name__ == "__main__":
     # load in piece data
     df = pd.read_csv("pieces.csv", sep=",")
-    pieces = dict(zip(df["index"], df["piece"]))
+    pieces = [[eval(y) for y in x.split(";")] for x in df["piece"]]
 
     # check data is correct
     for piece in pieces:
-        edge_list = pieces[piece].split(";")
 
-        for edge in edge_list:
-            if int(edge) not in (list(range(1, 23)) + [-1]):
+        for edge in piece:
+            if edge not in (list(range(1, 23)) + [-1]):
                 print("invalid edge number", int(edge))
 
     eternity_two_solver(pieces)
