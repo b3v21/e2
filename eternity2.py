@@ -28,22 +28,29 @@ import pandas as pd
 
 PUZZLE_SIZE = 6
 
-df = pd.read_csv('pieces.csv', sep=',')
+df = pd.read_csv("pieces.csv", sep=",")
+
 
 def gen_orientations(o):
-    return [o,[o[1],o[2],o[3],o[0]],[o[2],o[3],o[0],o[1]],[o[3],o[0],o[1],o[2]]]
+    return [
+        o,
+        [o[1], o[2], o[3], o[0]],
+        [o[2], o[3], o[0], o[1]],
+        [o[3], o[0], o[1], o[2]],
+    ]
+
 
 # Piece encodings
 piece_encodings = {}
-raw_data = dict(zip(df['index'], df['piece']))
+raw_data = dict(zip(df["index"], df["piece"]))
 
 for piece in raw_data:
-    list_form = raw_data.get(piece).split(';')
+    list_form = raw_data.get(piece).split(";")
 
     new_list = []
     for num in list_form:
-        if int(num) not in range(-1,23):
-            print('invalid piece encoding', int(num))
+        if int(num) not in range(-1, 23):
+            print("invalid piece encoding", int(num))
         else:
             new_list.append(int(num))
 
@@ -59,45 +66,70 @@ O = range(len(piece_encodings.get(1)))
 m = Model()
 
 # 1 if piece p fits in position (i,j) in orientation o
-X = {(i,j,p,o) : m.addVar(vtype = GRB.BINARY) for i in R for j in C for p in P for o in O}
+X = {
+    (i, j, p, o): m.addVar(vtype=GRB.BINARY) for i in R for j in C for p in P for o in O
+}
 
 # Only 1 piece per square
 for i in R:
     for j in C:
-        m.addConstr(quicksum(X[i,j,p,o] for p in P for o in O) == 1)
+        m.addConstr(quicksum(X[i, j, p, o] for p in P for o in O) == 1)
 
 # If piece is used, it has to be used once and only once
 for p in P:
-    m.addConstr(quicksum(X[i,j,p,o] for i in R for j in C for o in O) <= 1)
+    m.addConstr(quicksum(X[i, j, p, o] for i in R for j in C for o in O) <= 1)
 
 # Amount of pieces used has to match puzzle size
-m.addConstr(quicksum(X[i,j,p,o] for p in P for i in R for j in C for o in O) == PUZZLE_SIZE * PUZZLE_SIZE)
+m.addConstr(
+    quicksum(X[i, j, p, o] for p in P for i in R for j in C for o in O)
+    == PUZZLE_SIZE * PUZZLE_SIZE
+)
 
 # Neighbour Constraint Column
 for i in R:
     for j in C[:-1]:
-        m.addConstr(quicksum(X[i,j,p,o] * piece_encodings[p][o][1] for p in P for o in O) == 
-                    quicksum(X[i,j+1,p,o] * piece_encodings[p][o][3] for p in P for o in O))
+        m.addConstr(
+            quicksum(X[i, j, p, o] * piece_encodings[p][o][1] for p in P for o in O)
+            == quicksum(
+                X[i, j + 1, p, o] * piece_encodings[p][o][3] for p in P for o in O
+            )
+        )
 
 # Neighbour Constraint Row
 for j in C:
     for i in R[:-1]:
-        m.addConstr(quicksum(X[i,j,p,o] * piece_encodings[p][o][2] for p in P for o in O) == 
-                    quicksum(X[i+1,j,p,o] * piece_encodings[p][o][0] for p in P for o in O))
-        
+        m.addConstr(
+            quicksum(X[i, j, p, o] * piece_encodings[p][o][2] for p in P for o in O)
+            == quicksum(
+                X[i + 1, j, p, o] * piece_encodings[p][o][0] for p in P for o in O
+            )
+        )
+
 # Constrain Side Pieces (Row)
 for i in R:
     if i == 0:
-        m.addConstr(quicksum(X[i,j,p,o] * piece_encodings[p][o][0] for p in P for o in O) <= 0)
+        m.addConstr(
+            quicksum(X[i, j, p, o] * piece_encodings[p][o][0] for p in P for o in O)
+            <= 0
+        )
     if i == R[:-1]:
-        m.addConstr(quicksum(X[i,j,p,o] * piece_encodings[p][o][2] for p in P for o in O) <= 0)
+        m.addConstr(
+            quicksum(X[i, j, p, o] * piece_encodings[p][o][2] for p in P for o in O)
+            <= 0
+        )
 
 # Constrain Side Pieces (Col)
 for j in C:
     if j == 0:
-        m.addConstr(quicksum(X[i,j,p,o] * piece_encodings[p][o][3] for p in P for o in O) <= 0)
+        m.addConstr(
+            quicksum(X[i, j, p, o] * piece_encodings[p][o][3] for p in P for o in O)
+            <= 0
+        )
     if j == C[:-1]:
-        m.addConstr(quicksum(X[i,j,p,o] * piece_encodings[p][o][1] for p in P for o in O) <= 0)
+        m.addConstr(
+            quicksum(X[i, j, p, o] * piece_encodings[p][o][1] for p in P for o in O)
+            <= 0
+        )
 
 m.optimize()
 
@@ -106,13 +138,9 @@ result = ""
 for i in R:
     for j in C:
         for p in P:
-             for o in O:
-                if X[i,j,p,o].x > 0:
-                    result += "(p:{}, o:{})".format(p+1, o)
-                    if j == len(R)-1:
-                        result += '\n'
+            for o in O:
+                if X[i, j, p, o].x > 0:
+                    result += "(p:{}, o:{})".format(p + 1, o)
+                    if j == len(R) - 1:
+                        result += "\n"
 print(result)
-
-
-
-
